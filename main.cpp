@@ -1,7 +1,7 @@
 /* Sample auto-dynamic hashmap unit test
  * Authors: Ethan Laur (@phyrrus9) <phyrrus9@gmail.com>
  */
-#include "hash.h"
+#include "hashmap.h"
 #include <stdio.h>
 
 struct data
@@ -10,6 +10,8 @@ struct data
 	float f;
 	char c;
 };
+
+template class hashmap<struct data, std::string>;
 
 int main()
 {
@@ -21,7 +23,7 @@ int main()
 		{ -1, 2.0, 'a' },
 		{ 0, 1.11, '0' }
 	};
-	hashmap<struct data> q(4, 6);
+	hashmap<struct data, std::string> q(4, 6);
 	q.insert(d[0], "a");
 	q.insert(d[1], "b");
 	q.insert(d[2], "c");
@@ -30,6 +32,6 @@ int main()
 	q.remove("c");
 	q.remove("a");
 	q.remove("a");
-	q.reorder(REORDER_GO | REORDER_NOTIME);
+	q.reorder();
 	printf("done!\n");
 }
