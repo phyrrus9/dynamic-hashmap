@@ -1,3 +1,6 @@
+#include <unistd.h>
+#define REMOVE_AND_REORDER (this->max_entry / 4) /* if you remove 1/4 of the elements, it should reorder */
+unsigned int removal_count; /* file global, incremented in remove(), set to zero in constructor and reorder() */
 template <class T, class Q> hashmap<T, Q>::hashmap(unsigned int max, unsigned int bmax)
 {
 	check_types();
@@ -6,6 +9,8 @@ template <class T, class Q> hashmap<T, Q>::hashmap(unsigned int max, unsigned in
 	bucket_max       = bmax;
 	memset(table, 0, sizeof(hash_entry<T, Q> *) * max);
 	curr_entry = 0;
+	max_time = 0;
+	removal_count = 0; //<---file GLOBAL!
 }
 
 template <class T, class Q> void hashmap<T, Q>::insert(T ent, Q id)
@@ -14,12 +19,12 @@ template <class T, class Q> void hashmap<T, Q>::insert(T ent, Q id)
 	assert(curr_entry < (max_entry * bucket_max));
 	loc = genhash(id);
 	if (table[loc] == NULL)
-		table[loc] = new hash_entry<T, Q>(ent, id, loc, (hash_entry<T, Q> *)NULL);
+		table[loc] = new hash_entry<T, Q>(ent, id, loc, loc, (hash_entry<T, Q> *)NULL);
 	else if (buckets_left(loc))
 	{
 		hash_entry<T, Q> *head;
 		for (head = table[loc]; head->next != NULL; head = head->next); //find last bucket
-		head->next = new hash_entry<T, Q>(ent, id, loc, head);
+		head->next = new hash_entry<T, Q>(ent, id, loc, loc, head);
 	}
 	else insert_qprobe(ent, id, loc);
 	curr_entry++;
@@ -56,31 +61,38 @@ template <class T, class Q> void hashmap<T, Q>::remove(Q id)
 			delete ptr;
 		}
 		curr_entry--;
+		++removal_count;
+		if (removal_count > REMOVE_AND_REORDER)
+			this->reorder();
 	}
-	//this->reorder();
+}
+template <class T, class Q> void hashmap<T, Q>::reorder(unsigned int tmax, bool go)
+{
+	this->max_time = tmax;
+	if (go) this->reorder();
 }
 template <class T, class Q> void hashmap<T, Q>::reorder()
 {
-	unsigned int i, j;
-	hash_entry<T, Q> *arr = (hash_entry<T, Q> *)NULL, *tmp;
-	arr = new hash_entry<T, Q>[curr_entry];
-	for (i = j = 0; i < max_entry && j < curr_entry; i++)
-		while (buckets_left(i)) //<--currently broken, causes segmentation fault here
+	unsigned int i, j, lp, ln, qi, get_current;
+	hash_entry<T, Q> hash_tmp, *hash_obj;
+	time_t end_time = time(NULL) + this->max_time;
+	for (i = 0; i < max_entry && time(NULL) <= end_time; i++)
+	{
+		if (this->table[i] == NULL) continue;
+		if (!buckets_left(i)) continue;
+		for (i = 0; i < max_entry && time(NULL) <= end_time; i++)
 		{
-			tmp = (hash_entry<T, Q> *)NULL;
-			if (table[i] == NULL) continue;
-			arr[j++].set_base(*table[i]->data, table[i]->id);
-			tmp = table[i];
-			table[i] = table[i]->next;
-			delete tmp;
+			get_current = 0;
+			while ((hash_obj = get_object(i, &get_current, &hash_tmp)) != NULL) //see note in get_object
+			{
+				if (hash_obj->hashed_location == i) continue;
+				hash_entry<T, Q> hash_buf(*hash_obj);
+				this->remove(hash_obj->id);
+				this->insert(*hash_buf.data, hash_buf.id);
+				delete hash_buf.data; //since we can't call delete directly here
+				hash_buf.nodelete = true; //so it won't relink for us
+				removal_count = removal_count <= 0 ? 0 : removal_count - 1;
+			}
 		}
-	for (j = 0; j < curr_entry; j++)
-		this->insert(*tmp[j].data, tmp[j].id); //re-insert quickly
-	delete[] arr; //clean up
-	/* NOTE
-	   later on, I will swap this method out for a bubble-sort-timed
-	   method, allowing it to be more flexible, but this is quick for
-	   now while I figure out how to stop the bubble sort without
-	   using significant time
-	   END NOTE */
+	}
 }

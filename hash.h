@@ -18,6 +18,7 @@ private:
 	unsigned int genhash(std::string in);
 	unsigned int genhash(unsigned int in);
 	bool valid_type(const char * str) const;
+	unsigned int max_time;
 #define check_types(); assert(valid_type(typeid(Q).name()) && "Invalid key type");
 protected:
 	unsigned int max_entry, curr_entry, bucket_max;
@@ -27,6 +28,7 @@ protected:
 	hash_entry<T, Q> *get_bucket(Q id, unsigned long hash); //retrieves a key from a bucket
 	hash_entry<T, Q> *get_qprobe(Q id, unsigned long hash, unsigned int exponent = 2);
 	hash_entry<T, Q> *get_object(Q id);
+	hash_entry<T, Q> *get_object(unsigned long hash, unsigned int *curr, hash_entry<T, Q> *prev);
 	T *get_reference(Q id);
 public:
 	hashmap(unsigned int max, unsigned int bmax = 1);
@@ -34,6 +36,7 @@ public:
 	T get(Q id);
 	bool exists(Q id, hash_entry<T, Q> **irv = NULL); //double pointer used to assign location
 	void remove(Q id);
-	void reorder(); //currently acting as a call to raise(11)
+	void reorder();
+	void reorder(unsigned int tmax, bool go = false);
 };
 #endif

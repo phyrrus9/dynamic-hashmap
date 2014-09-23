@@ -32,6 +32,7 @@ int main()
 	q.remove("c");
 	q.remove("a");
 	q.remove("a");
+	q.remove("a");
 	q.reorder();
 	printf("done!\n");
 }

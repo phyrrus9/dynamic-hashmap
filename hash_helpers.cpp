@@ -23,12 +23,12 @@ void hashmap<T, Q>::insert_qprobe(T ent, Q id, unsigned int hash, int exponent)
 	loc = (hash + exponent) % max_entry;
 qloop_top:
 	if (table[loc] == NULL)
-		table[loc] = new hash_entry<T, Q>(ent, id, loc, (hash_entry<T, Q> *)NULL);
+		table[loc] = new hash_entry<T, Q>(ent, id, loc, hash, (hash_entry<T, Q> *)NULL);
 	else if (buckets_left(loc))
 	{
 		hash_entry<T, Q> *head;
 		for (head = table[loc]; head->next != NULL; head = head->next); //find last bucket
-		head->next = new hash_entry<T, Q>(ent, id, loc, head);			
+		head->next = new hash_entry<T, Q>(ent, id, loc, hash, head);			
 	}
 	else
 	{
@@ -110,4 +110,29 @@ T *hashmap<T, Q>::get_reference(Q id)
 				//if used in a hashmap::get call..
 				//useful if checking for exists
 	return ret->data;
+}
+template <class T, class Q>
+hash_entry<T, Q> *hashmap<T, Q>::get_object(unsigned long hash, unsigned int *curr, hash_entry<T, Q> *prev)
+{
+	hash_entry<T, Q> *c = prev;
+	if (prev->id == "") return (hash_entry<T, Q> *)NULL; //this one isn't valid any more
+	if (prev != NULL)
+	{
+		if (this->table[*curr]->next == NULL)
+			while ((c = this->table[++(*curr)]) == NULL)
+				if (*curr >= max_entry) return (hash_entry<T, Q> *)NULL;
+		else
+			c = prev->next;
+	}
+	else
+		while ((c = this->table[++(*curr)]) == NULL)
+			if (*curr >= max_entry) return (hash_entry<T, Q> *)NULL;
+	prev = c;
+	if (c->hash != hash) { printf("*recursing: %d %d %p\n", hash, *curr, prev); return this->get_object(hash, curr, prev); }
+	return c;
+	/* NOTE:
+	 * There is a condition of infinite recursion here, I patched it with
+	 * if (prev->id == "") return (hash_entry<T, Q> *)NULL; //this one isn't valid any more
+	 * but have not diagnosed the source of the bug.
+	 * END NOTE */
 }
