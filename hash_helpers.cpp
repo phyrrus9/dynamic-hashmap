@@ -1,3 +1,8 @@
+/* FILE: 	hash_helpers.cpp
+ * Author(s):	Ethan Laur
+ * Email(s):	phyrrus9@gmail.com
+ * Updated:	09/24/2014
+ */
 #define HASHMAP_EXPOSE_TYPE(k); { if (strcmp(str, typeid(k).name()) == 0) return true; }
 template <class T, class Q>
 bool hashmap<T, Q>::valid_type(const char * str) const

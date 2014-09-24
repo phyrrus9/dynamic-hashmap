@@ -1,5 +1,10 @@
+/* FILE: 	hash.cpp
+ * Author(s):	Ethan Laur
+ * Email(s):	phyrrus9@gmail.com
+ * Updated:	09/24/2014
+ */
 #include <unistd.h>
-#define REMOVE_AND_REORDER (this->max_entry / 4) /* if you remove 1/4 of the elements, it should reorder */
+#define REMOVE_AND_REORDER ((this->max_entry / 4) - (this->bucket_max / 8)) /* you get the point.. */
 unsigned int removal_count; /* file global, incremented in remove(), set to zero in constructor and reorder() */
 template <class T, class Q> hashmap<T, Q>::hashmap(unsigned int max, unsigned int bmax)
 {
@@ -10,6 +15,7 @@ template <class T, class Q> hashmap<T, Q>::hashmap(unsigned int max, unsigned in
 	memset(table, 0, sizeof(hash_entry<T, Q> *) * max);
 	curr_entry = 0;
 	max_time = 0;
+	max_time_infinite = false;
 	removal_count = 0; //<---file GLOBAL!
 }
 
@@ -62,29 +68,33 @@ template <class T, class Q> void hashmap<T, Q>::remove(Q id)
 		}
 		curr_entry--;
 		++removal_count;
-		if (removal_count > REMOVE_AND_REORDER)
-			this->reorder();
+		if (removal_count > REMOVE_AND_REORDER) this->reorder();
 	}
 }
-template <class T, class Q> void hashmap<T, Q>::reorder(unsigned int tmax, bool go)
+template <class T, class Q> void hashmap<T, Q>::reorder(unsigned int tmax, reorder_args options)
 {
-	this->max_time = tmax;
-	if (go) this->reorder();
+	unsigned int old_tmax = this->max_time; //save it, so if its a reorder_now, we can restore
+	if (options & REORDER_SET) this->max_time = tmax;
+	if (options & REORDER_INF) this->max_time_infinite = true;
+	else                       this->max_time_infinite = false;
+	if (options & REORDER_GO)  this->reorder();
+	if (options & REORDER_NOW) this->max_time = tmax;
 }
 template <class T, class Q> void hashmap<T, Q>::reorder()
 {
 	unsigned int i, j, lp, ln, qi, get_current;
 	hash_entry<T, Q> hash_tmp, *hash_obj;
 	time_t end_time = time(NULL) + this->max_time;
-	for (i = 0; i < max_entry && time(NULL) <= end_time; i++)
+	for (i = 0; i < max_entry && (time(NULL) <= end_time || this->max_time_infinite); i++)
 	{
 		if (this->table[i] == NULL) continue;
 		if (!buckets_left(i)) continue;
-		for (i = 0; i < max_entry && time(NULL) <= end_time; i++)
+		for (i = 0; i < max_entry && (time(NULL) <= end_time || this->max_time_infinite); i++)
 		{
 			get_current = 0;
 			while ((hash_obj = get_object(i, &get_current, &hash_tmp)) != NULL) //see note in get_object
 			{
+				if (!(time(NULL) <= end_time || this->max_time_infinite)) break; //get_object takes time too!
 				if (hash_obj->hashed_location == i) continue;
 				hash_entry<T, Q> hash_buf(*hash_obj);
 				this->remove(hash_obj->id);

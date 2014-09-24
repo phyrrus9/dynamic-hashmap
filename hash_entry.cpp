@@ -1,3 +1,8 @@
+/* FILE: 	hash_entry.cpp
+ * Author(s):	Ethan Laur
+ * Email(s):	phyrrus9@gmail.com
+ * Updated:	09/24/2014
+ */
 template <class T, class Q>
 hash_entry<T, Q>::hash_entry()
 {

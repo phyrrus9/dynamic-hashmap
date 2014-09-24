@@ -1,5 +1,8 @@
-/* Sample auto-dynamic hashmap unit test
- * Authors: Ethan Laur (@phyrrus9) <phyrrus9@gmail.com>
+/* FILE: 	main.cpp
+ * Author(s):	Ethan Laur
+ * Email(s):	phyrrus9@gmail.com
+ * Updated:	09/24/2014
+ * Extra:	sample use of hashmap.h class
  */
 #include "hashmap.h"
 #include <stdio.h>

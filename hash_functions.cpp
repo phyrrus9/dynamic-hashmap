@@ -1,3 +1,8 @@
+/* FILE: 	hash_functions.cpp
+ * Author(s):	Ethan Laur
+ * Email(s):	phyrrus9@gmail.com
+ * Updated:	09/24/2014
+ */
 template <class T, class Q>
 unsigned int hashmap<T, Q>::rotate_left(unsigned int in, int bits)
 {
